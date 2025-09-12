@@ -15,6 +15,7 @@ loopMethods.FORLOOP = function (parser: TexParser, name: string) {
 	var stepstr = ParseUtil.trimSpaces(parser.GetBrackets(name));
 	var start = parseInt(ParseUtil.trimSpaces(parser.GetArgument(name)));
 	var stop = parseInt(ParseUtil.trimSpaces(parser.GetArgument(name)));
+	var ctr = ParseUtil.trimSpaces(parser.GetArgument(name));
 	var code = ParseUtil.trimSpaces(parser.GetArgument(name));
 	var step = 1;
 
@@ -25,6 +26,7 @@ loopMethods.FORLOOP = function (parser: TexParser, name: string) {
 	for (var i = start;
 		i <= stop;
 		i += step) {
+		added += "\\setcounter{" + ctr + "}{" + i + "}";
 		added += code;
 	};
 	parser.string = ParseUtil.addArgs(parser, added, parser.string.slice(parser.i));

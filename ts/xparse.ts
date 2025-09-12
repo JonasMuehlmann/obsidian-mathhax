@@ -104,7 +104,11 @@ function GetArgumentSpec(parser: TexParser): ArgSpec {
 				const c = parser.string.charAt(parser.i++);
 				switch (c) {
 					case 'm':
+						spec.push({ type: c });
+						break;
 					case 'o':
+						spec.push({ type: c });
+						break;
 					case 'O': {
 						const def = parser.GetArgument('O');
 						spec.push({ type: c, default: def });
