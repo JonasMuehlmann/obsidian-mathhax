@@ -2,10 +2,11 @@ import { Plugin } from 'obsidian';
 import { MathHaxSettingTab } from './pluginSettings';
 import { createMathHaxMap } from './mjx-extension/MathHaxConfiguration';
 import { createXparseConfiguration } from './xparse';
+import { createCounterConfiguration } from './counters';
 import { MathJax } from './bindings';
 
 // import { PrioritizedList } from 'mathjax-full/ts/util/PrioritizedList';
-import { createSIUnitxConfiguration} from './siunitx/siunitx';
+import { createSIUnitxConfiguration } from './siunitx/siunitx';
 import { IOptions } from './siunitx/options/options';
 import { TeX } from 'mathjax-full/ts/input/tex';
 
@@ -107,22 +108,23 @@ export default class MathHaxPlugin extends Plugin {
 
 	private injectCustomMacros(mjx: MathJax) {
 		// create and register our macro-map
-		
+
 		const handlers = mjx.startup.input.first()?.configuration.handlers
 		if (handlers === undefined) return // Input object hasn't been initialized
-		
+
 		createSIUnitxConfiguration(mjx, this.settings); // configuration should probably be created before adding the maps
- 		createXparseConfiguration(mjx, this.settings);
-		
+		createXparseConfiguration(mjx, this.settings);
+		createCounterConfiguration(mjx, this.settings);
+
 		handlers.get('macro').add([createMathHaxMap()], null, /* PrioritizedList.DEFAULTPRIORITY */ 5);
-		
+
 		/* Test with:
 		MathJax.startup.input[0].configuration.handlers.get("macro").retrieve('mathhax');
 		*/
 	}
 
 	private updateTagSide(mjx: MathJax) {
-		mjx.startup.input.forEach((conf) => { 
+		mjx.startup.input.forEach((conf) => {
 			conf.options.tagSide = this.settings.tagSide;
 			// Post-Init
 			if ('_parseOptions' in conf) {
@@ -133,7 +135,7 @@ export default class MathHaxPlugin extends Plugin {
 
 	private fixMathJax(mjx: MathJax) {
 		// Fixes Issue #3365
-		const {Styles} = mjx._.util.Styles;
+		const { Styles } = mjx._.util.Styles;
 		Object.defineProperty(Styles.prototype, 'cssText', {
 			get: function () {
 				const styles = [];
@@ -174,7 +176,7 @@ export default class MathHaxPlugin extends Plugin {
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
-	
+
 	async saveSettings() {
 		await this.saveData(this.settings);
 
