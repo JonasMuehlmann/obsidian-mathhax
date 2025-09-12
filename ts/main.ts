@@ -1,6 +1,7 @@
 import { Plugin } from 'obsidian';
 import { MathHaxSettingTab } from './pluginSettings';
 import { createMathHaxMap } from './mjx-extension/MathHaxConfiguration';
+import { createXparseConfiguration } from './xparse';
 import { MathJax } from './bindings';
 
 // import { PrioritizedList } from 'mathjax-full/ts/util/PrioritizedList';
@@ -111,7 +112,8 @@ export default class MathHaxPlugin extends Plugin {
 		if (handlers === undefined) return // Input object hasn't been initialized
 		
 		createSIUnitxConfiguration(mjx, this.settings); // configuration should probably be created before adding the maps
-
+ 		createXparseConfiguration(mjx, this.settings);
+		
 		handlers.get('macro').add([createMathHaxMap()], null, /* PrioritizedList.DEFAULTPRIORITY */ 5);
 		
 		/* Test with:
