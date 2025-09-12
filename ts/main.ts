@@ -4,6 +4,7 @@ import { createMathHaxMap } from './mjx-extension/MathHaxConfiguration';
 import { createXparseConfiguration } from './xparse';
 import { createCounterConfiguration } from './counters';
 import { createForloopConfiguration } from './forloop';
+import { createToggleConfiguration } from './toggles';
 import { MathJax } from './bindings';
 
 // import { PrioritizedList } from 'mathjax-full/ts/util/PrioritizedList';
@@ -117,6 +118,7 @@ export default class MathHaxPlugin extends Plugin {
 		createXparseConfiguration(mjx, this.settings);
 		createCounterConfiguration(mjx, this.settings);
 		createForloopConfiguration(mjx, this.settings);
+		createToggleConfiguration(mjx, this.settings);
 
 		handlers.get('macro').add([createMathHaxMap()], null, /* PrioritizedList.DEFAULTPRIORITY */ 5);
 
