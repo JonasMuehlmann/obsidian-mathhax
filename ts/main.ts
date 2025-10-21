@@ -41,7 +41,7 @@ export default class MathHaxPlugin extends Plugin {
 
 		// Check if MathJax is available
 		if (typeof window.MathJax !== 'undefined' && typeof window.MathJax.config !== 'undefined') {
-			this.hijackMathJax(window.MathJax);
+			await this.hijackMathJax(window.MathJax);
 			console.log("MathHax Plugin was loaded!");
 		} else {
 			console.warn("MathJax not loaded. Custom macros cannot be injected.");
@@ -53,7 +53,8 @@ export default class MathHaxPlugin extends Plugin {
 		// this.registerInterval(this.intervalId);
 	}
 
-	private hijackMathJax(mjx: MathJax) {
+	async private hijackMathJax(mjx: MathJax) {
+		await mjx.startup.promise;
 		// Deactivate Safe mode because we want power!
 		mjx.startup.output.factory.jax.document.safe.allow = {
 			URLs: "safe",
