@@ -216,7 +216,7 @@ new CommandMap("counterCmdMap", {
 Configuration.create(
 	'counter', { handler: { macro: ["counterCmdMap"] } }
 );
-export function createCounterConfiguration(mjx: MathJax, settingsRef: any) {
+export function createCounterConfiguration(mjx: MathJax) {
 	const inputJax = mjx.startup.input.first();
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	inputJax.configuration.add('counter', inputJax as unknown as TeX<any, any, any>, {})

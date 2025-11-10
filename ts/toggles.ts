@@ -161,7 +161,7 @@ new CommandMap("toggleCmdMap", {
 Configuration.create(
 	'toggle', { handler: { macro: ["toggleCmdMap"] } }
 );
-export function createToggleConfiguration(mjx: MathJax, settingsRef: any) {
+export function createToggleConfiguration(mjx: MathJax) {
 	const inputJax = mjx.startup.input.first();
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	inputJax.configuration.add('toggle', inputJax as unknown as TeX<any, any, any>, {})

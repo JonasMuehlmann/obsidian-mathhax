@@ -1,6 +1,4 @@
-import { Plugin,  App, PluginManifest} from 'obsidian';
-import { MathHaxSettingTab } from './pluginSettings';
-import { createMathHaxMap } from './mjx-extension/MathHaxConfiguration';
+import { Plugin, App, PluginManifest } from 'obsidian';
 import { createXparseConfiguration } from './xparse';
 import { createCounterConfiguration } from './counters';
 import { createForloopConfiguration } from './forloop';
@@ -8,65 +6,43 @@ import { createToggleConfiguration } from './toggles';
 import { createAsargConfiguration } from './asarg';
 import { MathJax } from './bindings';
 
-// import { PrioritizedList } from 'mathjax-full/ts/util/PrioritizedList';
-import { createSIUnitxConfiguration } from './siunitx/siunitx';
-import { IOptions } from './siunitx/options/options';
-import { TeX } from 'mathjax-full/ts/input/tex';
-interface MathHaxPluginSettings {
-	tagSide: 'left' | 'right',
-	loadPhysics: boolean,
-	useTextFont: boolean,
-	siunitx: Partial<IOptions>
-}
-
-const DEFAULT_SETTINGS: Partial<MathHaxPluginSettings> = {
-	tagSide: 'right',
-	loadPhysics: false,
-	useTextFont: false,
-	siunitx: {}
-};
 
 export const MATH_HAX = 'mathhax';
 
 export default class MathHaxPlugin extends Plugin {
-	intervalId: number;
-	settings: MathHaxPluginSettings;
-  	app: App;
+	app: App;
 
-  	constructor(app: App, manifest: PluginManifest) {
-    	super(app, manifest);
-    	this.app = app;
-  	}
-	
-	loadPreamble(preamble) {
-		if (MathJax.tex2chtml == undefined) {
-			MathJax.startup.ready = () => {
-				MathJax.startup.defaultReady();
-				MathJax.startup.input.forEach((conf) => { conf._parseOptions.options.maxBuffer = 20 * 1024; conf._parseOptions.options.maxMacros = 10000; });
+	constructor(app: App, manifest: PluginManifest) {
+		super(app, manifest);
+		this.app = app;
+	}
 
-				MathJax.tex2chtml(preamble);
+	loadPreamble(mjx: MathJax, preamble: String) {
+		if (mjx.tex2chtml == undefined) {
+			mjx.startup.ready = () => {
+				mjx.startup.defaultReady();
+				mjx.startup.input.forEach((conf) => { conf._parseOptions.options.maxBuffer = 20 * 1024; conf._parseOptions.options.maxMacros = 10000; });
+
+				mjx.tex2chtml(preamble);
 			};
 		} else {
-			MathJax.tex2chtml(preamble);
-			MathJax.startup.input.forEach((conf) => { conf._parseOptions.options.maxBuffer = 20 * 1024; conf._parseOptions.options.maxMacros = 10000; });
+			mjx.tex2chtml(preamble);
+			mjx.startup.input.forEach((conf) => { conf._parseOptions.options.maxBuffer = 20 * 1024; conf._parseOptions.options.maxMacros = 10000; });
 		}
 	}
-	
+
 	async onload() {
 		const preamble = await this.app.vault.adapter.read("Meta/preamble.sty");
-		
-		await this.loadSettings();
-		this.addSettingTab(new MathHaxSettingTab(this.app, this));
-		
+
 		this.app.workspace.onLayoutReady(() => {
 			this.hijackMathJax(window.MathJax);
-			this.loadPreamble(preamble);
+			this.loadPreamble(window.MathJax, preamble);
 			console.log("MathHax Plugin was loaded!");
 		});
 
 	}
 
-	async private hijackMathJax(mjx: MathJax) {
+	private async hijackMathJax(mjx: MathJax) {
 		await mjx.startup.promise;
 		// Deactivate Safe mode because we want power!
 		mjx.startup.output.factory.jax.document.safe.allow = {
@@ -76,46 +52,10 @@ export default class MathHaxPlugin extends Plugin {
 			styles: "all"
 		}
 
-		this.fixMathJax(mjx);
-
-
-		// Inject a Font into MathJax
-		this.handleCustomFont(mjx);
-		// The Error font should always be overriden
-		mjx.startup.output.options.merrorFont = 'var(--font-monospace)';
-
-		// Change Tag placement
-		this.updateTagSide(mjx);
-
 		// Inject custom macros
 		this.injectCustomMacros(mjx);
-
-		// Load physics if requested
-		this.handleLoadPhysics(mjx);
 	}
 
-	/**
-	 * Applies the custom font settings to MathJax.
-	 * 
-	 * @param mjx MathJax instance
-	 */
-	public handleCustomFont(mjx: MathJax = window.MathJax) {
-		mjx.startup.output.options.mtextFont = this.settings.useTextFont ? 'var(--font-mjx-text)' : '';
-	}
-
-	/**
-	 * Loads the `physics` extension into MathJax, if requested by `this.pluginSettings`.
-	 * 
-	 * @param mjx the MathJax instance
-	 */
-	public handleLoadPhysics(mjx: MathJax = window.MathJax) {
-		if (this.settings.loadPhysics) {
-			const inputJax = mjx.startup.input.first();
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			inputJax.configuration.add('physics', inputJax as unknown as TeX<any, any, any>, {})
-		}
-		// unloading is not supported
-	}
 
 	/**
 	 * Updates the `tagSide` option of MathJax.
@@ -129,48 +69,11 @@ export default class MathHaxPlugin extends Plugin {
 		const handlers = mjx.startup.input.first()?.configuration.handlers
 		if (handlers === undefined) return // Input object hasn't been initialized
 
-		createSIUnitxConfiguration(mjx, this.settings); // configuration should probably be created before adding the maps
-		createXparseConfiguration(mjx, this.settings);
-		createCounterConfiguration(mjx, this.settings);
-		createForloopConfiguration(mjx, this.settings);
-		createToggleConfiguration(mjx, this.settings);
-		createAsargConfiguration(mjx, this.settings);
-
-		handlers.get('macro').add([createMathHaxMap()], null, /* PrioritizedList.DEFAULTPRIORITY */ 5);
-
-		/* Test with:
-		MathJax.startup.input[0].configuration.handlers.get("macro").retrieve('mathhax');
-		*/
-	}
-
-	private updateTagSide(mjx: MathJax) {
-		mjx.startup.input.forEach((conf) => {
-			conf.options.tagSide = this.settings.tagSide;
-			// Post-Init
-			if ('_parseOptions' in conf) {
-				conf._parseOptions.options.tagSide = this.settings.tagSide;
-			} /* Input object hasn't been initialized */
-		});
-	}
-
-	private fixMathJax(mjx: MathJax) {
-		// Fixes Issue #3365
-		const { Styles } = mjx._.util.Styles;
-		Object.defineProperty(Styles.prototype, 'cssText', {
-			get: function () {
-				const styles = [];
-				for (const name of Object.keys(this.styles)) {
-					const parent = this.parentName(name);
-					const cname = name.replace(/.*-/, '');
-					if (!this.styles[parent] || !Styles.connect[parent]?.children?.includes(cname)) {
-						styles.push(`${name}: ${this.styles[name]};`);
-					}
-				}
-				return styles.join(' ');
-			},
-			enumerable: false,
-			configurable: true,
-		});
+		createXparseConfiguration(mjx);
+		createCounterConfiguration(mjx);
+		createForloopConfiguration(mjx);
+		createToggleConfiguration(mjx);
+		createAsargConfiguration(mjx);
 	}
 
 	/**
@@ -186,20 +89,5 @@ export default class MathHaxPlugin extends Plugin {
 			classIDs: "safe",
 			styles: "safe"
 		}
-
-		mjx.startup.output.options.mtextFont = "";
-		mjx.startup.output.options.merrorFont = "";
-
-		// TODO: unload siunitx and mathhax-macros
-	}
-
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-
-		this.updateTagSide(window.MathJax);
 	}
 }

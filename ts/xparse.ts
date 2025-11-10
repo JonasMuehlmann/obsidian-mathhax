@@ -204,7 +204,7 @@ new CommandMap(XPARSEMAP, {
 Configuration.create(
 	'xparse', { handler: { macro: [XPARSEMAP] } }
 );
-export function createXparseConfiguration(mjx: MathJax, settingsRef: any) {
+export function createXparseConfiguration(mjx: MathJax) {
 	const inputJax = mjx.startup.input.first();
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	inputJax.configuration.add('xparse', inputJax as unknown as TeX<any, any, any>, {})

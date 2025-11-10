@@ -42,7 +42,7 @@ new CommandMap("forloopCmdMap", {
 Configuration.create(
 	'forloop', { handler: { macro: ["forloopCmdMap"] } }
 );
-export function createForloopConfiguration(mjx: MathJax, settingsRef: any) {
+export function createForloopConfiguration(mjx: MathJax) {
 	const inputJax = mjx.startup.input.first();
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	inputJax.configuration.add('forloop', inputJax as unknown as TeX<any, any, any>, {})

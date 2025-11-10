@@ -29,7 +29,7 @@ new CommandMap("asargCmdMap", {
 Configuration.create(
 	'asarg', { handler: { macro: ["asargCmdMap"] } }
 );
-export function createAsargConfiguration(mjx: MathJax, settingsRef: any) {
+export function createAsargConfiguration(mjx: MathJax) {
 	const inputJax = mjx.startup.input.first();
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	inputJax.configuration.add('asarg', inputJax as unknown as TeX<any, any, any>, {})
