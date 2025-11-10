@@ -1,4 +1,4 @@
-import { Plugin } from 'obsidian';
+import { Plugin,  App, PluginManifest} from 'obsidian';
 import { MathHaxSettingTab } from './pluginSettings';
 import { createMathHaxMap } from './mjx-extension/MathHaxConfiguration';
 import { createXparseConfiguration } from './xparse';
@@ -12,8 +12,6 @@ import { MathJax } from './bindings';
 import { createSIUnitxConfiguration } from './siunitx/siunitx';
 import { IOptions } from './siunitx/options/options';
 import { TeX } from 'mathjax-full/ts/input/tex';
-
-
 interface MathHaxPluginSettings {
 	tagSide: 'left' | 'right',
 	loadPhysics: boolean,
@@ -33,24 +31,39 @@ export const MATH_HAX = 'mathhax';
 export default class MathHaxPlugin extends Plugin {
 	intervalId: number;
 	settings: MathHaxPluginSettings;
+  	app: App;
 
-	async onload() {
-		await this.loadSettings();
+  	constructor(app: App, manifest: PluginManifest) {
+    	super(app, manifest);
+    	this.app = app;
+  	}
+	
+	loadPreamble(preamble) {
+		if (MathJax.tex2chtml == undefined) {
+			MathJax.startup.ready = () => {
+				MathJax.startup.defaultReady();
+				MathJax.startup.input.forEach((conf) => { conf._parseOptions.options.maxBuffer = 20 * 1024; conf._parseOptions.options.maxMacros = 10000; });
 
-		this.addSettingTab(new MathHaxSettingTab(this.app, this));
-
-		// Check if MathJax is available
-		if (typeof window.MathJax !== 'undefined' && typeof window.MathJax.config !== 'undefined') {
-			await this.hijackMathJax(window.MathJax);
-			console.log("MathHax Plugin was loaded!");
+				MathJax.tex2chtml(preamble);
+			};
 		} else {
-			console.warn("MathJax not loaded. Custom macros cannot be injected.");
-			// Optionally, listen for an event indicating MathJax availability (if applicable)
+			MathJax.tex2chtml(preamble);
+			MathJax.startup.input.forEach((conf) => { conf._parseOptions.options.maxBuffer = 20 * 1024; conf._parseOptions.options.maxMacros = 10000; });
 		}
+	}
+	
+	async onload() {
+		const preamble = await this.app.vault.adapter.read("Meta/preamble.sty");
+		
+		await this.loadSettings();
+		this.addSettingTab(new MathHaxSettingTab(this.app, this));
+		
+		this.app.workspace.onLayoutReady(() => {
+			this.hijackMathJax(window.MathJax);
+			this.loadPreamble(preamble);
+			console.log("MathHax Plugin was loaded!");
+		});
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		// this.intervalId = window.setInterval(this.registerExtension, 10)
-		// this.registerInterval(this.intervalId);
 	}
 
 	async private hijackMathJax(mjx: MathJax) {
