@@ -17,30 +17,28 @@ export default class MathHaxPlugin extends Plugin {
 		this.app = app;
 	}
 
-	loadPreamble(mjx: MathJax, preamble: String) {
-		if (mjx.tex2chtml == undefined) {
-			mjx.startup.ready = () => {
-				mjx.startup.defaultReady();
-				mjx.startup.input.forEach((conf) => { conf._parseOptions.options.maxBuffer = 20 * 1024; conf._parseOptions.options.maxMacros = 10000; });
-
-				mjx.tex2chtml(preamble);
-			};
-		} else {
-			mjx.tex2chtml(preamble);
-			mjx.startup.input.forEach((conf) => { conf._parseOptions.options.maxBuffer = 20 * 1024; conf._parseOptions.options.maxMacros = 10000; });
-		}
-	}
-
-	async onload() {
-		const preamble = await this.app.vault.adapter.read("Meta/preamble.sty");
-
-		this.app.workspace.onLayoutReady(() => {
-			this.hijackMathJax(window.MathJax);
-			this.loadPreamble(window.MathJax, preamble);
-			console.log("MathHax Plugin was loaded!");
-		});
-
-	}
+  loadPreamble(mjx, preamble) {
+        mjx.startup.input.forEach((conf) => {
+          conf._parseOptions.options.maxBuffer = 20 * 1024;
+          conf._parseOptions.options.maxMacros = 1e4;
+        });
+  }
+  async onload() {
+      var mjx = window.MathJax;
+      const preamble = await this.app.vault.adapter.read("Meta/preamble.sty");
+      await mjx.startup.promise;
+      mjx.startup.document.safe.allow = {
+      // mjx.startup.output.factory.jax.document.safe.allow = {
+		URLs: "safe",
+		classes: "all",
+		classIDs: "all",
+		styles: "all"
+      };
+      this.injectCustomMacros(mjx);
+  	  console.log("MathHax Plugin was loaded!");
+      this.loadPreamble(preamble);
+	  console.log("Preamble loaded");
+  }
 
 	private async hijackMathJax(mjx: MathJax) {
 		await mjx.startup.promise;
